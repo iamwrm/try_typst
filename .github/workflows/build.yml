@@ -1,0 +1,36 @@
+name: Build Typst Document
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Apply typst toolchain patch
+        run: |
+          rm -rf ./typst_toolchain
+          curl -sSL https://raw.githubusercontent.com/iamwrm/try_typst/refs/heads/master/typst_toolchain.patch | patch -p1
+
+      - name: Build toolchain
+        run: bash ./typst_toolchain/build.sh
+
+      - name: Compile typst document
+        run: bash ./typst_toolchain/compile.sh example_paper/test.typ
+
+      - name: Verify output
+        run: ls -lah example_paper/test.pdf
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-pdf
+          path: example_paper/test.pdf

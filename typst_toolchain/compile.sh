@@ -1,0 +1,1 @@
+docker run -v $PWD:/workspace -w /workspace typst_cn typst compile $@

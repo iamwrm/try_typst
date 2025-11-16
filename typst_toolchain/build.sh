@@ -1,0 +1,1 @@
+docker build -t typst_cn -f typst_toolchain/Dockerfile .

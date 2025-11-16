@@ -1,0 +1,195 @@
+diff --git a/typst_toolchain/Dockerfile b/typst_toolchain/Dockerfile
+new file mode 100644
+index 0000000..4b0d5a0
+--- /dev/null
++++ b/typst_toolchain/Dockerfile
+@@ -0,0 +1,50 @@
++FROM alpine:latest
++
++# Install dependencies
++RUN apk add --no-cache \
++    curl \
++    ca-certificates \
++    fontconfig \
++    freetype \
++    harfbuzz \
++    graphite2 \
++    libgcc \
++    libstdc++ \
++    unzip
++
++# Download and install Source Han Sans fonts from Adobe
++# Using Simplified Chinese (SC) variant - adjust URL for other variants (TC, JP, KR)
++RUN mkdir -p /usr/share/fonts/source-han-sans && \
++    cd /usr/share/fonts/source-han-sans && \
++    curl -L https://github.com/adobe-fonts/source-han-sans/releases/download/2.004R/SourceHanSansSC.zip -o SourceHanSansSC.zip && \
++    unzip -q SourceHanSansSC.zip && \
++    rm SourceHanSansSC.zip
++
++# Download and install Source Han Serif fonts from Adobe
++# Using Simplified Chinese (SC) variant - adjust URL for other variants (TC, JP, KR)
++RUN mkdir -p /usr/share/fonts/source-han-serif && \
++    cd /usr/share/fonts/source-han-serif && \
++    curl -L https://github.com/adobe-fonts/source-han-serif/releases/download/2.003R/09_SourceHanSerifSC.zip -o SourceHanSerifSC.zip && \
++    unzip -q SourceHanSerifSC.zip && \
++    rm SourceHanSerifSC.zip
++
++# Update font cache and verify installation
++RUN fc-cache -f -v && \
++    echo "=== Installed Source Han fonts ===" && \
++    fc-list | grep -i "source han" | head -10
++
++# Download and install Typst
++# Using the latest Typst release for x86_64 musl (Alpine compatible)
++RUN TYPST_VERSION=v0.14.0 && \
++    curl -fsSL https://github.com/typst/typst/releases/download/${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz \
++    | tar -xJ -C /tmp && \
++    mv /tmp/typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
++    chmod +x /usr/local/bin/typst && \
++    rm -rf /tmp/typst-x86_64-unknown-linux-musl && \
++    typst --version
++
++# Create working directory
++WORKDIR /workspace
++
++# Default command
++CMD ["/bin/sh"]
+diff --git a/typst_toolchain/README.md b/typst_toolchain/README.md
+new file mode 100644
+index 0000000..4f20cf5
+--- /dev/null
++++ b/typst_toolchain/README.md
+@@ -0,0 +1,117 @@
++## Contact and Resources
++
++### Official Documentation
++- **Typst**: https://typst.app/docs
++- **Source Han Fonts**: https://github.com/adobe-fonts/source-han-serif
++
++### Session Information
++- **Development Date**: 2025-11-16
++- **Developer**: Claude Code (Anthropic)
++- **Platform**: Linux 6.17.4-orbstack
++
++---
++
++## Appendix: Code Snippets
++
++### Apply patch
++
++```bash
++patch -p1 < typst_toolchain.patch
++```
++
++### Complete test.typ (Final Version)
++```typst
++#set page(
++  paper: "a4",
++  margin: (x: 2cm, y: 2cm)
++)
++
++#set text(
++  font: ("Source Han Serif", "Source Han Sans"),
++  lang: "zh",
++  size: 12pt
++)
++
++#set par(
++  justify: true,
++  leading: 0.65em
++)
++
++#set heading(numbering: "1.")
++
++#show raw.where(block: true): it => {
++  block(
++    width: 100%,
++    inset: 10pt,
++    radius: 4pt,
++    stroke: 1pt + luma(180),
++    fill: luma(245),
++    breakable: true,
++    it
++  )
++}
++
++= 测试文档
++
++这是一个测试文档，用于验证Typst的中文支持。
++
++== Bash脚本示例
++
++#raw(read("example.sh"), lang: "bash", block: true)
++
++== C++代码示例
++
++#raw(read("example.cpp"), lang: "cpp", block: true)
++
++== 长Python文件示例
++
++以下是一个较长的Python文件，用于测试分页效果：
++
++#raw(read("long_example.py"), lang: "python", block: true)
++```
++
++### Example External Files
++
++#### example.sh
++```bash
++#!/bin/bash
++# 这是一个测试脚本
++# This is a test script
++
++echo "你好，世界！"
++echo "Hello, World!"
++
++# 循环示例
++for i in {1..5}; do
++    echo "计数: $i"
++done
++```
++
++#### example.cpp
++```cpp
++#include <iostream>
++#include <string>
++
++// 学生类
++class 学生 {
++private:
++    std::string 姓名;
++    int 年龄;
++
++public:
++    学生(std::string n, int a) : 姓名(n), 年龄(a) {}
++
++    void 显示信息() {
++        std::cout << "姓名: " << 姓名 << std::endl;
++        std::cout << "年龄: " << 年龄 << std::endl;
++    }
++};
++
++int main() {
++    学生 张三("张三", 20);
++    张三.显示信息();
++    return 0;
++}
++```
++
++---
+diff --git a/typst_toolchain/build.sh b/typst_toolchain/build.sh
+new file mode 100644
+index 0000000..3da5137
+--- /dev/null
++++ b/typst_toolchain/build.sh
+@@ -0,0 +1 @@
++docker build -t typst_cn -f typst_toolchain/Dockerfile .
+\ No newline at end of file
+diff --git a/typst_toolchain/compile.sh b/typst_toolchain/compile.sh
+new file mode 100644
+index 0000000..1e8c4d6
+--- /dev/null
++++ b/typst_toolchain/compile.sh
+@@ -0,0 +1 @@
++docker run -v $PWD:/workspace -w /workspace typst_cn typst compile $@
+\ No newline at end of file
