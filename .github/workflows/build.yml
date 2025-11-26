@@ -24,13 +24,13 @@ jobs:
         run: bash ./typst_toolchain/build.sh
 
       - name: Compile typst document
-        run: bash ./typst_toolchain/compile.sh example_paper/test.typ
+        run: bash ./typst_toolchain/compile.sh examples/example_paper/test.typ
 
       - name: Verify output
-        run: ls -lah example_paper/test.pdf
+        run: ls -lah examples/example_paper/test.pdf
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           name: compiled-pdf
-          path: example_paper/test.pdf
+          path: examples/example_paper/test.pdf
